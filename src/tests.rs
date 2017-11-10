@@ -25,14 +25,14 @@ fn smoke()
 	});
 	
 	let mut first_style_node = None;
-	rc_dom.find_all_matching_child_nodes_depth_first_including_this_one(&parse_css_selector("head > style").unwrap(), &mut |node|
+	rc_dom.find_all_matching_child_nodes_depth_first_including_this_one(&parse_css_selector("head > style[amp]").unwrap(), &mut |node|
 	{
 		first_style_node = Some(node.clone());
 		true
 	});
 	if let Some(ref first_style_node) = first_style_node
 	{
-		rc_dom.append(first_style_node, AppendText(StrTendril::from_slice("some-custom-css")));
+		first_style_node.append_text(&mut rc_dom, "some-custom-css");
 	}
 	
 	eprintln!("{}", rc_dom.debug_string());
