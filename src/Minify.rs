@@ -119,6 +119,7 @@ impl Minify for Rc<Node>
 	}
 }
 
+/// Use this to minify on the children of a Rc<Node>, eg node.children.debug_string()
 impl Minify for RefCell<Vec<Rc<Node>>>
 {
 	#[inline(always)]

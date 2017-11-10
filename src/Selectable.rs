@@ -17,6 +17,7 @@ pub trait Selectable
 	fn matches(&self, selector: &OurSelector) -> bool;
 }
 
+/// Use this to match a list of HTML documents.
 impl<'a> Selectable for &'a [RcDom]
 {
 	#[inline]
@@ -97,5 +98,35 @@ impl<'a> Selectable for Rc<Node>
 			
 			_ => false,
 		}
+	}
+}
+
+/// Use this to match on the children of a Rc<Node>, eg node.children.matches()
+impl Selectable for RefCell<Vec<Rc<Node>>>
+{
+	#[inline]
+	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
+	{
+		for node in self.borrow().iter()
+		{
+			if node.find_all_matching_child_nodes_depth_first_including_this_one(selector, match_user)
+			{
+				return true;
+			}
+		}
+		false
+	}
+	
+	#[inline]
+	fn matches(&self, selector: &OurSelector) -> bool
+	{
+		for node in self.borrow().iter()
+		{
+			if node.matches(selector)
+			{
+				return true;
+			}
+		}
+		false
 	}
 }
