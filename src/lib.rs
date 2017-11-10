@@ -7,7 +7,7 @@
 
 //! # html5_ext
 //!
-//! This is set of unofficial extensions to the [html5ever](https://github.com/servo/html5ever) crate's RcDom and Node structs, including a ***minifying HTML5 serializer*** and support for ***CSS matching**.
+//! This is a set of unofficial extensions to the [html5ever](https://github.com/servo/html5ever) crate's RcDom and Node structs, including a ***minifying HTML5 serializer*** and support for ***CSS matching**.
 //!
 //! It re-exports the `css` and `html5ever` crates, and useful DOM types hidden inside the `::html5ever::markup5ever::rcdom` module.
 //!

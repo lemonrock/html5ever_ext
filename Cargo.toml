@@ -4,7 +4,7 @@
 
 [package]
 name = "html5ever_ext"
-description = "This is set of unofficial extensions to the html5ever crate's RcDom and Node structs, including a ***minifying HTML5 serializer*** and support for ***CSS matching**."
+description = "This is a set of unofficial extensions to the html5ever crate's RcDom and Node structs, including a ***minifying HTML5 serializer*** and support for ***CSS matching**."
 categories = ["web-programming"]
 keywords = ["html5ever", "html", "HTML5", "minify", "minifier"]
 license = "MIT"
@@ -16,7 +16,7 @@ exclude = ["*"]
 include = ["README.md", "LICENSE", "COPYRIGHT", "src/**/*.rs", "Cargo.toml", "rustfmt.toml", "clippy.toml"]
 readme = "README.md"
 publish = true
-version = "0.21.2"
+version = "0.21.3"
 
 [profile.release]
 opt-level = 3
