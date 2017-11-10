@@ -16,7 +16,7 @@ exclude = ["*"]
 include = ["README.md", "LICENSE", "COPYRIGHT", "src/**/*.rs", "Cargo.toml", "rustfmt.toml", "clippy.toml"]
 readme = "README.md"
 publish = true
-version = "0.21.4"
+version = "0.21.5"
 
 [profile.release]
 opt-level = 3

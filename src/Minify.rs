@@ -28,8 +28,6 @@ pub trait Minify
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to file.
-	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
-	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
 	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
@@ -47,8 +45,6 @@ pub trait Minify
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to String.
-	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
-	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
 	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
@@ -59,8 +55,6 @@ pub trait Minify
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to a vector of bytes.
-	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
-	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
 	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
@@ -74,8 +68,6 @@ pub trait Minify
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to a writer.
-	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
-	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
 	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
