@@ -5,10 +5,6 @@
 /// This trait adds additional methods to a a HTML DOM node.
 pub trait NodeExt: Sized + Minify
 {
-	/// Identical to impl Debug's fmt() method, except we can't impl Debug for a trait and struct we don't own in this crate.
-	#[inline(always)]
-	fn debug_fmt(&self, f: &mut Formatter) -> fmt::Result;
-	
 	/// Validated a HTML DOM node, removes any child comments and processing instructions.
 	fn validate_children_and_remove_comments_and_processing_instructions(&self, context: &Path) -> Result<(), HtmlError>;
 	
@@ -25,61 +21,63 @@ pub trait NodeExt: Sized + Minify
 	
 	/// Returns the previous sibling, or None if this is the first sibling
 	#[inline(always)]
-	fn previous_sibling(&self) -> Option<Self>
+	fn previous_sibling(&self, skip_inter_element_whitespace_comment_or_processing_instructions: bool) -> Option<Self>
 	{
-		self._previous_or_next_sibling(false)
+		self._previous_or_next_sibling(false, skip_inter_element_whitespace_comment_or_processing_instructions)
 	}
 	
 	/// Returns the next sibling, or None if this is the last sibling
 	#[inline(always)]
-	fn next_sibling(&self) -> Option<Self>
+	fn next_sibling(&self, skip_inter_element_whitespace_comment_or_processing_instructions: bool) -> Option<Self>
 	{
-		self._previous_or_next_sibling(true)
+		self._previous_or_next_sibling(true, skip_inter_element_whitespace_comment_or_processing_instructions)
 	}
 	
 	#[doc(hidden)]
 	#[inline(always)]
-	fn _previous_or_next_sibling(&self, next: bool) -> Option<Self>;
+	fn _previous_or_next_sibling(&self, next: bool, skip_inter_element_whitespace_comment_or_processing_instructions: bool) -> Option<Self>;
+	
+	/// Used for determining siblings.
+	#[inline(always)]
+	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool;
 }
 
 impl NodeExt for Rc<Node>
 {
-	#[inline(always)]
-	fn debug_fmt(&self, f: &mut Formatter) -> fmt::Result
-	{
-		match self.data
-		{
-			Document => write!(f, "Document()"),
-			
-			Doctype { ref name, ref public_id, ref system_id } => write!(f, "Doctype({:?}, {:?}, {:?})", name, public_id, system_id),
-			
-			Text { ref contents } => write!(f, "Text({:?})", contents),
-			
-			Comment { ref contents } => write!(f, "Comment({:?})", contents),
-			
-			NodeData::Element { ref name, ref attrs, .. } => write!(f, "Element({:?}, {:?})", name, attrs),
-			
-			ProcessingInstruction { ref target, ref contents } => write!(f, "ProcessingInstruction({:?}, {:?})", target, contents),
-		}
-	}
-	
 	fn validate_children_and_remove_comments_and_processing_instructions(&self, context: &Path) -> Result<(), HtmlError>
 	{
-		let mut children = self.children.borrow_mut();
-		
-		if self.can_have_children() && !children.is_empty()
+		if !self.can_have_children() && !self.children.borrow().is_empty()
 		{
-			return Err(HtmlError::InvalidFile(context.to_path_buf(), "This node contains children when it should not.".to_owned()));
+			return Err(HtmlError::InvalidFile(context.to_path_buf(), format!("This node contains children when it should not ({}).", self.debug_string())));
 		}
 		
-		let mut processed_children = Vec::with_capacity(children.len());
+		let mut processed_children = Vec::with_capacity(self.children.borrow().len());
 		
 		let mut previous_was_text_node = false;
 		let mut last_added_node_was_text_node = false;
-		for child_node in children.iter()
+		for child_node in self.children.borrow().iter()
 		{
 			match child_node.data
 			{
+				Document => return Err(HtmlError::InvalidFile(context.to_path_buf(), "Document nodes are not valid children".to_owned())),
+				
+				Doctype { .. } => match self.data
+				{
+					Document => (),
+					
+					_ => return Err(HtmlError::InvalidFile(context.to_path_buf(), "DOCTYPE nodes are not valid children except for Document nodes".to_owned())),
+				},
+				
+				NodeData::Element { .. } =>
+				{
+					child_node.validate_children_and_remove_comments_and_processing_instructions(context)?;
+					
+					processed_children.push(child_node.clone());
+					
+					previous_was_text_node = false;
+					last_added_node_was_text_node = false;
+				}
+				
 				Comment { .. } | ProcessingInstruction { .. } =>
 				{
 					previous_was_text_node = false;
@@ -87,69 +85,58 @@ impl NodeExt for Rc<Node>
 				
 				Text { ref contents } =>
 				{
-					if !child_node.children.borrow().is_empty()
-					{
-						return Err(HtmlError::InvalidFile(context.to_path_buf(), "Text nodes must not have children".to_owned()));
-					}
-					
 					if previous_was_text_node
 					{
 						return Err(HtmlError::InvalidFile(context.to_path_buf(), "Text nodes can not have a previous sibling which is also a text node".to_owned()));
 					}
 					
-					// Merge with a previous text node; this occurs because we remove comments and processing instructions
-					if last_added_node_was_text_node
+					// Discard inter-element whitespace
+					if !is_inter_element_whitespace(contents.borrow().deref())
 					{
-						let previous_text_node: Rc<Node> = processed_children.pop().unwrap();
-						match previous_text_node.data
+						// Merge with a previous text node; this occurs because we remove comments and processing instructions
+						if last_added_node_was_text_node
 						{
-							Text { contents: ref previous_node_contents } =>
+							let previous_text_node: Rc<Node> = processed_children.pop().unwrap();
+							match previous_text_node.data
 							{
-								let merged_node = Node
+								Text { contents: ref previous_node_contents } =>
 								{
-									parent: Cell::new(Some(Rc::downgrade(self))),
-									children: RefCell::new(Vec::new()),
-									data: Text
+									let merged_node = Node
 									{
-										contents:
+										parent: Cell::new(Some(Rc::downgrade(self))),
+										children: RefCell::new(Vec::new()),
+										data: Text
 										{
-											let previous_contents = previous_node_contents.borrow();
-											let contents = contents.borrow();
-											let mut merged_contents: Tendril<UTF8, NonAtomic> = Tendril::with_capacity(previous_contents.len32() + contents.len32());
-											merged_contents.push_tendril(&previous_contents);
-											merged_contents.push_tendril(&contents);
-											RefCell::new(merged_contents)
+											contents:
+											{
+												let previous_contents = previous_node_contents.borrow();
+												let contents = contents.borrow();
+												let mut merged_contents: Tendril<UTF8, NonAtomic> = Tendril::with_capacity(previous_contents.len32() + contents.len32());
+												merged_contents.push_tendril(&previous_contents);
+												merged_contents.push_tendril(&contents);
+												RefCell::new(merged_contents)
+											}
 										}
-									}
-								};
-								processed_children.push(Rc::new(merged_node));
+									};
+									processed_children.push(Rc::new(merged_node));
+								}
+								_ => unreachable!("Previously added a text node"),
 							}
-							_ => unreachable!("Previously added a text node"),
+							// Already true, so no need for  last_added_node_was_text_node = true;
+						}
+						else
+						{
+							processed_children.push(child_node.clone());
+							last_added_node_was_text_node = true;
 						}
 					}
-					else
-					{
-						processed_children.push(child_node.clone());
-					}
+					
 					previous_was_text_node = true;
-					last_added_node_was_text_node = true;
-				}
-				
-				Document | Doctype { .. } =>
-				{
-					return Err(HtmlError::InvalidFile(context.to_path_buf(), "Document and DOCTYPE nodes are not valid children".to_owned()));
-				}
-				
-				NodeData::Element { .. } =>
-				{
-					child_node.validate_children_and_remove_comments_and_processing_instructions(context)?;
-					processed_children.push(child_node.clone());
-					previous_was_text_node = false;
-					last_added_node_was_text_node = false;
 				}
 			}
 		}
 		
+		let mut children = self.children.borrow_mut();
 		*children = processed_children;
 		
 		Ok(())
@@ -175,12 +162,25 @@ impl NodeExt for Rc<Node>
 		self.children.borrow().get(0).map(|child| child.clone())
 	}
 	
+	#[inline(always)]
+	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool
+	{
+		match self.data
+		{
+			Comment { .. } | ProcessingInstruction { .. } => true,
+			
+			Text { ref contents } => is_inter_element_whitespace(contents.borrow().deref()),
+			
+			_ => false,
+		}
+	}
+	
 	#[doc(hidden)]
 	#[inline(always)]
-	fn _previous_or_next_sibling(&self, next: bool) -> Option<Self>
+	fn _previous_or_next_sibling(&self, next: bool, skip_inter_element_whitespace_comment_or_processing_instructions: bool) -> Option<Self>
 	{
 		#[inline(always)]
-		fn iterate<'a, I: Iterator<Item=&'a Rc<Node>>>(this: &Rc<Node>, sibling_iterator: I) -> Option<Rc<Node>>
+		fn iterate<'a, I: Iterator<Item=&'a Rc<Node>>>(this: &Rc<Node>, skip_inter_element_whitespace_comment_or_processing_instructions: bool, sibling_iterator: I) -> Option<Rc<Node>>
 		{
 			let mut previous_sibling = None;
 			for current_sibling in sibling_iterator
@@ -189,7 +189,18 @@ impl NodeExt for Rc<Node>
 				{
 					return previous_sibling;
 				}
-				previous_sibling = Some(current_sibling.clone());
+				
+				if skip_inter_element_whitespace_comment_or_processing_instructions
+				{
+					if !current_sibling.is_inter_element_whitespace_comment_or_processing_instruction()
+					{
+						previous_sibling = Some(current_sibling.clone());
+					}
+				}
+				else
+				{
+					previous_sibling = Some(current_sibling.clone());
+				}
 			}
 			unreachable!();
 		}
@@ -200,11 +211,11 @@ impl NodeExt for Rc<Node>
 			let iterator = borrowed.iter();
 			if next
 			{
-				iterate(self, iterator.rev())
+				iterate(self, skip_inter_element_whitespace_comment_or_processing_instructions, iterator.rev())
 			}
 			else
 			{
-				iterate(self, iterator)
+				iterate(self, skip_inter_element_whitespace_comment_or_processing_instructions, iterator)
 			}
 		}
 		else

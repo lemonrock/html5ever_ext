@@ -20,9 +20,9 @@ impl Debug for ElementNode
 impl QualNameExt for ElementNode
 {
 	#[inline(always)]
-	fn is_unprefixed_and_unnamespaced(&self) -> bool
+	fn is_unprefixed_and_html_namespace_or_none(&self) -> bool
 	{
-		self.node.is_unprefixed_and_unnamespaced()
+		self.node.is_unprefixed_and_html_namespace_or_none()
 	}
 	
 	#[inline(always)]
@@ -47,6 +47,12 @@ impl QualNameExt for ElementNode
 	fn text_content_should_be_escaped(&self) -> bool
 	{
 		self.node.text_content_should_be_escaped()
+	}
+	
+	#[inline(always)]
+	fn can_collapse_whitespace(&self) -> bool
+	{
+		self.node.can_collapse_whitespace()
 	}
 }
 

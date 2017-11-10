@@ -40,7 +40,7 @@
 //! use ::html5ever_ext::RcDomExt;
 //! use ::html5ever_ext::parse_css_selector;
 //! use ::html5ever_ext::Selectable;
-//! use ::html5ever_ext::NodeExt;
+//! use ::html5ever_ext::Minify;
 //!
 //! let rc_dom = RcDom::from_file_path_verified_and_stripped_of_comments_and_processing_instructions_and_with_a_sane_doc_type("/path/to/document.html").expect("invalid HTML");
 //!
@@ -50,10 +50,10 @@
 //!
 //! rc_dom.find_all_matching_child_nodes_depth_first_including_this_one(&selector, |node|
 //! {
-//! 	// Done this way because Rc<Node> does not implement Debug, but NodeExt implement debug_fmt() which is identical as possible.
-//! 	let mut debug = String::new();
-//! 	node.debug_fmt(&mut debug).unwrap();
-//! 	write!("Found node {}", &debug);
+//! 	eprintln!("{}", node.debug_string());
+//!
+//! 	const SHORTCUT: bool = false;
+//! 	SHORTCUT
 //! })
 //! ```
 //!
@@ -110,9 +110,14 @@ use ::std::path::PathBuf;
 use ::std::rc::Rc;
 
 
+#[cfg(test)] mod tests;
+
+
 include!("Selectable.rs");
 include!("ElementNode.rs");
 include!("HtmlError.rs");
+include!("is_inter_element_whitespace.rs");
+include!("is_space_character.rs");
 include!("Minify.rs");
 include!("NodeExt.rs");
 include!("QualNameExt.rs");
