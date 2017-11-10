@@ -40,6 +40,54 @@ pub trait NodeExt: Sized + Minify
 	/// Used for determining siblings.
 	#[inline(always)]
 	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool;
+	
+	/// Removes this node from its parent.
+	#[inline(always)]
+	fn remove(&self, rc_dom: &mut RcDom);
+	
+	/// Moves a node's children to another parent node
+	#[inline(always)]
+	fn move_node_children_to(&self, rc_dom: &mut RcDom, new_parent_node: &Self);
+	
+	/// Moves an existing element node to a parent node
+	#[inline(always)]
+	fn move_node_to(&self, rc_dom: &mut RcDom, new_parent_node: &Self);
+	
+	/// Moves an existing element before a sibling node
+	#[inline(always)]
+	fn move_node_before_sibling_of(&self, rc_dom: &mut RcDom, sibling_node: &Self);
+	
+	/// Appends a new element node to a parent node
+	#[inline(always)]
+	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>);
+	
+	/// Appends a new element before a sibling node
+	#[inline(always)]
+	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>);
+	
+	/// Appends a new comment node to a parent node
+	#[inline(always)]
+	fn append_new_comment_to(&self, rc_dom: &mut RcDom, comment: &str);
+	
+	/// Appends a new comment before a sibling node
+	#[inline(always)]
+	fn append_new_comment_before_sibling_of(&self, rc_dom: &mut RcDom, comment: &str);
+	
+	/// Appends a new processing instruction node to a parent node
+	#[inline(always)]
+	fn append_new_processing_instruction_to(&self, rc_dom: &mut RcDom, target: &str, data: &str);
+	
+	/// Appends a new processing instruction before a sibling node
+	#[inline(always)]
+	fn append_new_processing_instruction_before_sibling_of(&self, rc_dom: &mut RcDom, target: &str, data: &str);
+	
+	/// Appends a text node to a parent node
+	#[inline(always)]
+	fn append_text(&self, rc_dom: &mut RcDom, text: &str);
+	
+	/// Appends a text node before a sibling node
+	#[inline(always)]
+	fn append_text_before_sibling_of(&self, rc_dom: &mut RcDom, text: &str);
 }
 
 impl NodeExt for Rc<Node>
@@ -162,19 +210,6 @@ impl NodeExt for Rc<Node>
 		self.children.borrow().get(0).map(|child| child.clone())
 	}
 	
-	#[inline(always)]
-	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool
-	{
-		match self.data
-		{
-			Comment { .. } | ProcessingInstruction { .. } => true,
-			
-			Text { ref contents } => is_inter_element_whitespace(contents.borrow().deref()),
-			
-			_ => false,
-		}
-	}
-	
 	#[doc(hidden)]
 	#[inline(always)]
 	fn _previous_or_next_sibling(&self, next: bool, skip_inter_element_whitespace_comment_or_processing_instructions: bool) -> Option<Self>
@@ -222,5 +257,90 @@ impl NodeExt for Rc<Node>
 		{
 			None
 		}
+	}
+	
+	#[inline(always)]
+	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool
+	{
+		match self.data
+		{
+			Comment { .. } | ProcessingInstruction { .. } => true,
+			
+			Text { ref contents } => is_inter_element_whitespace(contents.borrow().deref()),
+			
+			_ => false,
+		}
+	}
+	
+	#[inline(always)]
+	fn remove(&self, rc_dom: &mut RcDom)
+	{
+		rc_dom.remove_from_parent(self)
+	}
+	
+	#[inline(always)]
+	fn move_node_children_to(&self, rc_dom: &mut RcDom, new_parent_node: &Self)
+	{
+		rc_dom.move_node_to_parent_node(new_parent_node, self)
+	}
+	
+	#[inline(always)]
+	fn move_node_to(&self, rc_dom: &mut RcDom, new_parent_node: &Self)
+	{
+		rc_dom.move_node_children_to_parent_node(new_parent_node, self)
+	}
+	
+	#[inline(always)]
+	fn move_node_before_sibling_of(&self, rc_dom: &mut RcDom, sibling_node: &Self)
+	{
+		rc_dom.move_node_before_sibling_node(sibling_node, self)
+	}
+	
+	#[inline(always)]
+	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>)
+	{
+		rc_dom.append_new_element_to_parent_node(self, qualified_name, attributes)
+	}
+	
+	#[inline(always)]
+	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>)
+	{
+		rc_dom.append_new_element_before_sibling_node(self, qualified_name, attributes)
+	}
+	
+	#[inline(always)]
+	fn append_new_comment_to(&self, rc_dom: &mut RcDom, comment: &str)
+	{
+		rc_dom.append_new_comment_to_parent_node(self, comment)
+	}
+	
+	#[inline(always)]
+	fn append_new_comment_before_sibling_of(&self, rc_dom: &mut RcDom, comment: &str)
+	{
+		rc_dom.append_new_comment_before_sibling_node(self, comment)
+	}
+	
+	#[inline(always)]
+	fn append_new_processing_instruction_to(&self, rc_dom: &mut RcDom, target: &str, data: &str)
+	{
+		rc_dom.append_new_processing_instruction_to_parent_node(self, target, data)
+	}
+	
+	#[inline(always)]
+	fn append_new_processing_instruction_before_sibling_of(&self, rc_dom: &mut RcDom, target: &str, data: &str)
+	{
+		rc_dom.append_new_processing_instruction_before_sibling_node(self, target, data)
+	}
+	
+	#[inline(always)]
+	fn append_text(&self, rc_dom: &mut RcDom, text: &str)
+	{
+		rc_dom.append_text_to_parent_node(self, text)
+	}
+	
+	#[inline(always)]
+	fn append_text_before_sibling_of(&self, rc_dom: &mut RcDom, text: &str)
+	{
+		rc_dom.append_text_before_sibling_node(self, text)
 	}
 }

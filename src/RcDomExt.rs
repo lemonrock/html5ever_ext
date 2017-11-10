@@ -20,6 +20,62 @@ pub trait RcDomExt: Sized + Minify
 	/// Remove all comments and processing instructions and make the DOCTYPE a simple 'html' (for HTML 5).
 	fn recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(&self, context: &Path) -> Result<(), HtmlError>;
 	
+	/// Moves a node's children to another parent node
+	#[inline(always)]
+	fn move_node_children_to_parent_node(&mut self, parent_node: &Rc<Node>, node: &Rc<Node>);
+	
+	/// Moves an existing element node to a parent node
+	#[inline(always)]
+	fn move_node_to_parent_node(&mut self, parent_node: &Rc<Node>, node: &Rc<Node>);
+	
+	/// Moves an existing element before a sibling node
+	#[inline(always)]
+	fn move_node_before_sibling_node(&mut self, sibling_node: &Rc<Node>, node: &Rc<Node>);
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_element(&mut self, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_comment(&mut self, comment: &str) -> Rc<Node>;
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_processing_instruction(&mut self, target: &str, data: &str) -> Rc<Node>;
+	
+	/// Appends a new element node to a parent node
+	#[inline(always)]
+	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>);
+	
+	/// Appends a new element before a sibling node
+	#[inline(always)]
+	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>);
+	
+	/// Appends a new comment node to a parent node
+	#[inline(always)]
+	fn append_new_comment_to_parent_node(&mut self, parent_node: &Rc<Node>, comment: &str);
+	
+	/// Appends a new comment before a sibling node
+	#[inline(always)]
+	fn append_new_comment_before_sibling_node(&mut self, sibling_node: &Rc<Node>, comment: &str);
+	
+	/// Appends a new processing instruction node to a parent node
+	#[inline(always)]
+	fn append_new_processing_instruction_to_parent_node(&mut self, parent_node: &Rc<Node>, target: &str, data: &str);
+	
+	/// Appends a new processing instruction before a sibling node
+	#[inline(always)]
+	fn append_new_processing_instruction_before_sibling_node(&mut self, sibling_node: &Rc<Node>, target: &str, data: &str);
+	
+	/// Appends a text node to a parent node
+	#[inline(always)]
+	fn append_text_to_parent_node(&mut self, parent_node: &Rc<Node>, text: &str);
+	
+	/// Appends a text node before a sibling node
+	#[inline(always)]
+	fn append_text_before_sibling_node(&mut self, sibling_node: &Rc<Node>, text: &str);
+	
 	#[doc(hidden)]
 	#[inline(always)]
 	fn _verify_is_document_and_not_a_fragment(&self, context: &Path) -> Result<(), HtmlError>;
@@ -115,6 +171,104 @@ impl RcDomExt for RcDom
 		};
 		document.children.borrow_mut().insert(0, Rc::new(doctype_node));
 		Ok(())
+	}
+	
+	#[inline(always)]
+	fn move_node_children_to_parent_node(&mut self, parent_node: &Rc<Node>, node: &Rc<Node>)
+	{
+		self.reparent_children(node, parent_node);
+	}
+	
+	#[inline(always)]
+	fn move_node_to_parent_node(&mut self, parent_node: &Rc<Node>, node: &Rc<Node>)
+	{
+		self.remove_from_parent(node);
+		self.append(parent_node, AppendNode(node.clone()))
+	}
+	
+	#[inline(always)]
+	fn move_node_before_sibling_node(&mut self, sibling_node: &Rc<Node>, node: &Rc<Node>)
+	{
+		self.remove_from_parent(node);
+		self.append_before_sibling(sibling_node, AppendNode(node.clone()))
+	}
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_element(&mut self, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
+	{
+		let mut element_flags = ElementFlags::default();
+		element_flags.template = qualified_name.is_only_local(&local_name!("template"));
+		element_flags.mathml_annotation_xml_integration_point = false;
+		self.create_element(qualified_name, attributes, element_flags)
+	}
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_comment(&mut self, comment: &str) -> Rc<Node>
+	{
+		self.create_comment(StrTendril::from_slice(comment))
+	}
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _create_parent_less_processing_instruction(&mut self, target: &str, data: &str) -> Rc<Node>
+	{
+		self.create_pi(StrTendril::from_slice(target), StrTendril::from_slice(data))
+	}
+	
+	#[inline(always)]
+	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>)
+	{
+		let node = self._create_parent_less_element(qualified_name, attributes);
+		self.append(parent_node, AppendNode(node))
+	}
+	
+	#[inline(always)]
+	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>)
+	{
+		let node = AppendNode(self._create_parent_less_element(qualified_name, attributes));
+		self.append_before_sibling(sibling_node, node)
+	}
+	
+	#[inline(always)]
+	fn append_new_comment_to_parent_node(&mut self, parent_node: &Rc<Node>, comment: &str)
+	{
+		let node = self._create_parent_less_comment(comment);
+		self.append(parent_node, AppendNode(node))
+	}
+	
+	#[inline(always)]
+	fn append_new_comment_before_sibling_node(&mut self, sibling_node: &Rc<Node>, comment: &str)
+	{
+		let node = self._create_parent_less_comment(comment);
+		self.append_before_sibling(sibling_node, AppendNode(node))
+	}
+	
+	#[inline(always)]
+	fn append_new_processing_instruction_to_parent_node(&mut self, parent_node: &Rc<Node>, target: &str, data: &str)
+	{
+		let node = self._create_parent_less_processing_instruction(target, data);
+		self.append(parent_node, AppendNode(node))
+	}
+	
+	#[inline(always)]
+	fn append_new_processing_instruction_before_sibling_node(&mut self, sibling_node: &Rc<Node>, target: &str, data: &str)
+	{
+		let node = self._create_parent_less_processing_instruction(target, data);
+		self.append_before_sibling(sibling_node, AppendNode(node))
+	}
+	
+	#[inline(always)]
+	fn append_text_to_parent_node(&mut self, parent_node: &Rc<Node>, text: &str)
+	{
+		self.append(parent_node, AppendText(StrTendril::from_slice(text)));
+	}
+	
+	#[inline(always)]
+	fn append_text_before_sibling_node(&mut self, sibling_node: &Rc<Node>, text: &str)
+	{
+		self.append_before_sibling(sibling_node, AppendText(StrTendril::from_slice(text)))
 	}
 	
 	#[doc(hidden)]
