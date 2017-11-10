@@ -17,11 +17,11 @@ fn smoke()
 	eprintln!("{}", rc_dom.debug_string());
 	
 	
-	let selector = parse_css_selector("body").unwrap();
+	let selector = parse_css_selector("main").unwrap();
 	assert!(!rc_dom.matches(&selector));
 	rc_dom.find_all_matching_child_nodes_depth_first_including_this_one(&selector, &mut |node|
 	{
-		eprintln!("{}", node.debug_string());
+		eprintln!("{}", node.children.debug_string());
 		
 		const SHORTCUT: bool = false;
 		SHORTCUT

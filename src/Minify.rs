@@ -5,6 +5,15 @@
 /// Minifies and serializes a html5ever HTML DOM (RcDom) or node (Rc<Node>, aka Handle).
 pub trait Minify
 {
+	#[doc(hidden)]
+	const PRESERVE_COMMENTS: bool = false;
+	
+	#[doc(hidden)]
+	const PRESERVE_PROCESSING_INSTRUCTIONS: bool = false;
+	
+	#[doc(hidden)]
+	const COLLAPSE_WHITESPACE: bool = true;
+	
 	/// Identical to impl Debug's fmt() method, except we can't impl Debug for a trait and struct we don't own in this crate.
 	#[inline(always)]
 	fn debug_fmt<W: fmt::Write>(&self, f: &mut W) -> fmt::Result;
@@ -19,39 +28,65 @@ pub trait Minify
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to file.
+	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
+	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
-	/// Wraps use of `UltraMinifyingHtmlSerializer`.
-	/// If you need to serialize multiple RcDom or Node objects to the same writer, consider using `UltraMinifyingHtmlSerializer` directly.
+	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
-	fn minify_to_file_path<P: AsRef<Path>>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, html_file_path: P) -> Result<(), HtmlError>;
+	fn minify_to_file_path<P: AsRef<Path>>(&self, html_head_and_body_tags_are_optional: bool, html_file_path: P) -> Result<(), HtmlError>
+	{
+		use ::std::fs::File;
+		
+		let path = html_file_path.as_ref();
+		
+		let file = File::create(path).context(path)?;
+		
+		self.minify_to_writer(html_head_and_body_tags_are_optional, file).context(path)?;
+		
+		Ok(())
+	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to String.
+	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
+	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
-	/// For maximum efficiency at the cost of slight inaccuracy, set `collapse_whitespace` to true. (pre, code, samp and kbd are unaffected in any event).
-	/// Wraps use of `UltraMinifyingHtmlSerializer`.
-	/// If you need to serialize multiple RcDom or Node objects to the same writer, consider using `UltraMinifyingHtmlSerializer` directly.
+	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
-	fn minify_to_string(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool) -> String
+	fn minify_to_string(&self, html_head_and_body_tags_are_optional: bool) -> String
 	{
-		let bytes = self.minify_to_bytes(html_head_and_body_tags_are_optional, collapse_whitespace);
+		let bytes = self.minify_to_bytes(html_head_and_body_tags_are_optional);
 		String::from_utf8(bytes).unwrap()
 	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to a vector of bytes.
+	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
+	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
-	/// For maximum efficiency at the cost of slight inaccuracy, set `collapse_whitespace` to true. (pre, code, samp and kbd are unaffected in any event).
-	/// Wraps use of `UltraMinifyingHtmlSerializer`.
-	/// If you need to serialize multiple RcDom or Node objects to the same writer, consider using `UltraMinifyingHtmlSerializer` directly.
+	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
-	fn minify_to_bytes(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool) -> Vec<u8>;
+	fn minify_to_bytes(&self, html_head_and_body_tags_are_optional: bool) -> Vec<u8>
+	{
+		let mut bytes = Vec::new();
+		
+		self.minify_to_writer(html_head_and_body_tags_are_optional, &mut bytes).unwrap();
+		
+		bytes
+	}
 	
 	/// Minifies and serializes an instance of an HTML DOM to a writer.
+	/// `only_serialize_children` should be true only if you do not want to serialize '&self', eg `<main><p>...</p>><p>...</p></main>` with `only_serialize_children` set to true would serialize `<p>...</p>><p>...</p>`.
+	/// Note that this has no effect on a RcDom - it will still serialize an entire document, including a DOCTYPE, etc.
 	/// If creating AMP pages, set `html_head_and_body_tags_are_optional` to false.
-	/// For maximum efficiency at the cost of slight inaccuracy, set `collapse_whitespace` to true. (pre, code, samp and kbd are unaffected in any event).
-	/// Wraps use of `UltraMinifyingHtmlSerializer`.
-	/// If you need to serialize multiple RcDom or Node objects to the same writer, consider using `UltraMinifyingHtmlSerializer` directly.
+	/// If you need to serialize multiple RcDom or Node objects to the same writer, or need more control, consider using `UltraMinifyingHtmlSerializer`.
 	#[inline(always)]
-	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, writer: W) -> io::Result<()>;
+	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, writer: W) -> io::Result<()>;
+	
+	#[doc(hidden)]
+	#[inline(always)]
+	fn _serializer<W: Write>(html_head_and_body_tags_are_optional: bool, writer: W) -> UltraMinifyingHtmlSerializer<W>
+	{
+		UltraMinifyingHtmlSerializer::new(html_head_and_body_tags_are_optional, Self::PRESERVE_COMMENTS, Self::PRESERVE_PROCESSING_INSTRUCTIONS, writer)
+	}
 }
 
 impl Minify for RcDom
@@ -63,21 +98,9 @@ impl Minify for RcDom
 	}
 	
 	#[inline(always)]
-	fn minify_to_file_path<P: AsRef<Path>>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, html_file_path: P) -> Result<(), HtmlError>
+	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, writer: W) -> io::Result<()>
 	{
-		self.document.minify_to_file_path(html_head_and_body_tags_are_optional, collapse_whitespace, html_file_path)
-	}
-	
-	#[inline(always)]
-	fn minify_to_bytes(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool) -> Vec<u8>
-	{
-		self.document.minify_to_bytes(html_head_and_body_tags_are_optional, collapse_whitespace)
-	}
-	
-	#[inline(always)]
-	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, writer: W) -> io::Result<()>
-	{
-		UltraMinifyingHtmlSerializer::new(html_head_and_body_tags_are_optional, false, false, writer).serialize_rc_dom(self, collapse_whitespace)
+		self.document.minify_to_writer(html_head_and_body_tags_are_optional, writer)
 	}
 }
 
@@ -86,36 +109,40 @@ impl Minify for Rc<Node>
 	#[inline(always)]
 	fn debug_fmt<W: fmt::Write>(&self, f: &mut W) -> fmt::Result
 	{
-		write!(f, "{}", self.minify_to_string(true, true))
+		write!(f, "{}", self.minify_to_string(true))
 	}
 	
 	#[inline(always)]
-	fn minify_to_file_path<P: AsRef<Path>>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, html_file_path: P) -> Result<(), HtmlError>
+	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, writer: W) -> io::Result<()>
 	{
-		use ::std::fs::File;
-		
-		let path = html_file_path.as_ref();
-		
-		let file = File::create(path).context(path)?;
-		
-		self.minify_to_writer(html_head_and_body_tags_are_optional, collapse_whitespace, file).context(path)?;
-		
+		Self::_serializer(html_head_and_body_tags_are_optional, writer).serialize_node(self, Self::COLLAPSE_WHITESPACE, true)
+	}
+}
+
+impl Minify for RefCell<Vec<Rc<Node>>>
+{
+	#[inline(always)]
+	fn debug_fmt<W: fmt::Write>(&self, f: &mut W) -> fmt::Result
+	{
+		for node in self.borrow().iter()
+		{
+			node.debug_fmt(f)?;
+		}
 		Ok(())
 	}
 	
 	#[inline(always)]
-	fn minify_to_bytes(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool) -> Vec<u8>
+	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, mut writer: W) -> io::Result<()>
 	{
-		let mut bytes = Vec::new();
+		{
+			let mut serializer = Self::_serializer(html_head_and_body_tags_are_optional, &mut writer);
+			
+			for node in self.borrow().iter()
+			{
+				serializer.serialize_node(node, Self::COLLAPSE_WHITESPACE, false)?;
+			}
+		}
 		
-		self.minify_to_writer(html_head_and_body_tags_are_optional, collapse_whitespace, &mut bytes).unwrap();
-		
-		bytes
-	}
-	
-	#[inline(always)]
-	fn minify_to_writer<W: Write>(&self, html_head_and_body_tags_are_optional: bool, collapse_whitespace: bool, writer: W) -> io::Result<()>
-	{
-		UltraMinifyingHtmlSerializer::new(html_head_and_body_tags_are_optional, false, false, writer).serialize_node(self, collapse_whitespace, true)
+		writer.flush()
 	}
 }

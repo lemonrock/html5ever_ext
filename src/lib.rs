@@ -50,7 +50,8 @@
 //!
 //! rc_dom.find_all_matching_child_nodes_depth_first_including_this_one(&selector, |node|
 //! {
-//! 	eprintln!("{}", node.debug_string());
+//! 	//Minify is implemented on node.children as well as node and rc_dom.
+//! 	eprintln!("{}", node.children.debug_string());
 //!
 //! 	const SHORTCUT: bool = false;
 //! 	SHORTCUT
