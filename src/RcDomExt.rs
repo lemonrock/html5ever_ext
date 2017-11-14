@@ -13,6 +13,14 @@ pub trait RcDomExt: Sized + Minify
 	#[inline(always)]
 	fn from_file_path<P: AsRef<Path>>(file_path: P) -> Result<Self, HtmlError>;
 	
+	/// Creates an instance of an HTML DOM from bytes which is verified, stripped and with a sane DocType.
+	#[inline(always)]
+	fn from_bytes_verified_and_stripped_of_comments_and_processing_instructions_and_with_a_sane_doc_type<P: AsRef<Path>>(bytes: &[u8], context: P) -> Result<Self, HtmlError>;
+	
+	/// Creates an instance of an HTML DOM from bytes
+	#[inline(always)]
+	fn from_bytes(bytes: &[u8]) -> Self;
+	
 	/// Verify that this HTML DOM is valid.
 	#[inline(always)]
 	fn verify(&self, context: &Path) -> Result<(), HtmlError>;
@@ -91,31 +99,11 @@ pub trait RcDomExt: Sized + Minify
 	#[doc(hidden)]
 	#[inline(always)]
 	fn _verify_root_element(&self, context: &Path) -> Result<(), HtmlError>;
-}
-
-impl RcDomExt for RcDom
-{
-	#[inline(always)]
-	fn from_file_path_verified_and_stripped_of_comments_and_processing_instructions_and_with_a_sane_doc_type<P: AsRef<Path>>(html_document_file_path: P) -> Result<Self, HtmlError>
-	{
-		let path = html_document_file_path.as_ref();
-		
-		let document = Self::from_file_path(path)?;
-		document.verify(path)?;
-		document.recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(path)?;
-		Ok(document)
-	}
 	
+	#[doc(hidden)]
 	#[inline(always)]
-	fn from_file_path<P: AsRef<Path>>(html_document_file_path: P) -> Result<Self, HtmlError>
+	fn _parser() -> Utf8LossyDecoder<Parser<RcDom>>
 	{
-		use ::html5ever::driver::parse_document;
-		use ::html5ever::driver::ParseOpts;
-		use ::html5ever::tokenizer::TokenizerOpts;
-		use ::html5ever::tree_builder::QuirksMode;
-		use ::html5ever::tree_builder::TreeBuilderOpts;
-		use ::html5ever::tendril::TendrilSink;
-		
 		let tree_sink = RcDom::default();
 		let parse_options = ParseOpts
 		{
@@ -138,10 +126,45 @@ impl RcDomExt for RcDom
 			},
 		};
 		let parser = parse_document(tree_sink, parse_options);
-		
+		parser.from_utf8()
+	}
+}
+
+impl RcDomExt for RcDom
+{
+	#[inline(always)]
+	fn from_file_path_verified_and_stripped_of_comments_and_processing_instructions_and_with_a_sane_doc_type<P: AsRef<Path>>(html_document_file_path: P) -> Result<Self, HtmlError>
+	{
 		let path = html_document_file_path.as_ref();
-		let document = parser.from_utf8().from_file(path).context(path)?;
+		
+		let document = Self::from_file_path(path)?;
+		document.verify(path)?;
+		document.recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(path)?;
 		Ok(document)
+	}
+	
+	#[inline(always)]
+	fn from_file_path<P: AsRef<Path>>(html_document_file_path: P) -> Result<Self, HtmlError>
+	{
+		let path = html_document_file_path.as_ref();
+		let document = Self::_parser().from_file(path).context(path)?;
+		Ok(document)
+	}
+	
+	#[inline(always)]
+	fn from_bytes_verified_and_stripped_of_comments_and_processing_instructions_and_with_a_sane_doc_type<P: AsRef<Path>>(bytes: &[u8], context: P) -> Result<Self, HtmlError>
+	{
+		let path = context.as_ref();
+		let document = Self::from_bytes(bytes);
+		document.verify(path)?;
+		document.recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(path)?;
+		Ok(document)
+	}
+	
+	#[inline(always)]
+	fn from_bytes(bytes: &[u8]) -> Self
+	{
+		Self::_parser().one(bytes)
 	}
 	
 	#[inline(always)]
