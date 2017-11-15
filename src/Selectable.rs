@@ -11,6 +11,12 @@ pub trait Selectable
 	#[inline]
 	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool;
 	
+	/// Recursively find element nodes that match this selector.
+	/// Return true from MatchUser to abort early.
+	/// The result of this function is true if MatchUser aborted early, or false otherwise.
+	#[inline]
+	fn find_all_matching_child_nodes_depth_first_excluding_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool;
+	
 	/// Returns whether this element matches this selector.
 	/// For the RcDom and &'a [RcDom], is currently always false.
 	#[inline]
@@ -20,6 +26,19 @@ pub trait Selectable
 /// Use this to match a list of HTML documents.
 impl<'a> Selectable for &'a [RcDom]
 {
+	#[inline]
+	fn find_all_matching_child_nodes_depth_first_excluding_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
+	{
+		for rc_dom in self.iter()
+		{
+			if rc_dom.find_all_matching_child_nodes_depth_first_excluding_this_one(selector, match_user)
+			{
+				return true;
+			}
+		}
+		false
+	}
+	
 	#[inline]
 	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
 	{
@@ -50,6 +69,12 @@ impl<'a> Selectable for &'a [RcDom]
 impl Selectable for RcDom
 {
 	#[inline]
+	fn find_all_matching_child_nodes_depth_first_excluding_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
+	{
+		self.document.find_all_matching_child_nodes_depth_first_excluding_this_one(selector, match_user)
+	}
+	
+	#[inline]
 	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
 	{
 		self.document.find_all_matching_child_nodes_depth_first_including_this_one(selector, match_user)
@@ -64,6 +89,19 @@ impl Selectable for RcDom
 
 impl<'a> Selectable for Rc<Node>
 {
+	#[inline]
+	fn find_all_matching_child_nodes_depth_first_excluding_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
+	{
+		for child in self.children.borrow().iter()
+		{
+			if child.find_all_matching_child_nodes_depth_first_including_this_one(selector, match_user)
+			{
+				return true;
+			}
+		}
+		false
+	}
+	
 	#[inline]
 	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
 	{
@@ -104,6 +142,19 @@ impl<'a> Selectable for Rc<Node>
 /// Use this to match on the children of a Rc<Node>, eg node.children.matches()
 impl Selectable for RefCell<Vec<Rc<Node>>>
 {
+	#[inline]
+	fn find_all_matching_child_nodes_depth_first_excluding_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
+	{
+		for node in self.borrow().iter()
+		{
+			if node.find_all_matching_child_nodes_depth_first_excluding_this_one(selector, match_user)
+			{
+				return true;
+			}
+		}
+		false
+	}
+	
 	#[inline]
 	fn find_all_matching_child_nodes_depth_first_including_this_one<MatchUser: FnMut(&Rc<Node>) -> bool>(&self, selector: &OurSelector, match_user: &mut MatchUser) -> bool
 	{
