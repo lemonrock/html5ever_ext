@@ -28,6 +28,30 @@ pub trait RcDomExt: Sized + Minify
 	/// Remove all comments and processing instructions and make the DOCTYPE a simple 'html' (for HTML 5).
 	fn recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(&self, context: &Path) -> Result<(), HtmlError>;
 	
+	/// Moves a node's children to the document node
+	#[inline(always)]
+	fn move_node_children_to_document_node(&mut self, node: &Rc<Node>);
+	
+	/// Appends a new element node to the document node
+	#[inline(always)]
+	fn move_node_to_document_node(&mut self, node: &Rc<Node>);
+	
+	/// Appends a new element node to the document node
+	#[inline(always)]
+	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>);
+	
+	/// Appends a new comment node to the document node
+	#[inline(always)]
+	fn append_new_comment_to_document_node(&mut self, comment: &str);
+	
+	/// Appends a new processing instruction node to the document node
+	#[inline(always)]
+	fn append_new_processing_instruction_to_document_node(&mut self, target: &str, data: &str);
+	
+	/// Appends a text node to the document node
+	#[inline(always)]
+	fn append_text_to_document_node(&mut self, text: &str);
+	
 	/// Moves a node's children to another parent node
 	#[inline(always)]
 	fn move_node_children_to_parent_node(&mut self, parent_node: &Rc<Node>, node: &Rc<Node>);
@@ -194,6 +218,48 @@ impl RcDomExt for RcDom
 		};
 		document.children.borrow_mut().insert(0, Rc::new(doctype_node));
 		Ok(())
+	}
+	
+	#[inline(always)]
+	fn move_node_children_to_document_node(&mut self, node: &Rc<Node>)
+	{
+		let document = self.document.clone();
+		self.move_node_children_to_parent_node(&document, node)
+	}
+	
+	#[inline(always)]
+	fn move_node_to_document_node(&mut self, node: &Rc<Node>)
+	{
+		let document = self.document.clone();
+		self.move_node_to_parent_node(&document, node)
+	}
+	
+	#[inline(always)]
+	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>)
+	{
+		let document = self.document.clone();
+		self.append_new_element_to_parent_node(&document, qualified_name, attributes)
+	}
+	
+	#[inline(always)]
+	fn append_new_comment_to_document_node(&mut self, comment: &str)
+	{
+		let document = self.document.clone();
+		self.append_new_comment_to_parent_node(&document, comment)
+	}
+	
+	#[inline(always)]
+	fn append_new_processing_instruction_to_document_node(&mut self, target: &str, data: &str)
+	{
+		let document = self.document.clone();
+		self.append_new_processing_instruction_to_parent_node(&document, target, data)
+	}
+	
+	#[inline(always)]
+	fn append_text_to_document_node(&mut self, text: &str)
+	{
+		let document = self.document.clone();
+		self.append(&document, AppendText(StrTendril::from_slice(text)));
 	}
 	
 	#[inline(always)]
