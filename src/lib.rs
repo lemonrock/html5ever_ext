@@ -126,11 +126,13 @@ use ::std::rc::Rc;
 #[cfg(test)] mod tests;
 
 
+include!("AttributeExt.rs");
 include!("Selectable.rs");
 include!("ElementNode.rs");
 include!("HtmlError.rs");
 include!("is_inter_element_whitespace.rs");
 include!("is_space_character.rs");
+include!("LocalNameExt.rs");
 include!("Minify.rs");
 include!("NodeExt.rs");
 include!("QualNameExt.rs");

@@ -2,23 +2,29 @@
 // Copyright © 2017 The developers of html5ever_ext. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/html5ever_ext/master/COPYRIGHT.
 
 
-/// Additional methods for working with attributes
-pub trait AttributeExt: Sized
+/// Additional helpers to make LocalName more pleasant to work with
+pub trait LocalNameExt
 {
-	/// Makes an Attribute with a Local QualName and value
+	/// Turns a LocalName into a Local QualName
 	#[inline(always)]
-	fn local(local_name: LocalName, value: &str) -> Self;
+	fn qual_name(self) -> QualName;
+	
+	/// Turns a LocalName into an Attribute with a Local QualName and value
+	#[inline(always)]
+	fn attribute(self, value: &str) -> Attribute;
 }
 
-impl AttributeExt for Attribute
+impl LocalNameExt for LocalName
 {
 	#[inline(always)]
-	fn local(local_name: LocalName, value: &str) -> Self
+	fn qual_name(self) -> QualName
 	{
-		Self
-		{
-			name: QualName::local(local_name),
-			value: StrTendril::from_slice(value),
-		}
+		QualName::local(self)
+	}
+	
+	#[inline(always)]
+	fn attribute(self, value: &str) -> Attribute
+	{
+		Attribute::local(self, value)
 	}
 }
