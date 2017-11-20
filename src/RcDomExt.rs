@@ -38,7 +38,7 @@ pub trait RcDomExt: Sized + Minify
 	
 	/// Appends a new element node to the document node
 	#[inline(always)]
-	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>);
+	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
 	
 	/// Appends a new comment node to the document node
 	#[inline(always)]
@@ -78,11 +78,11 @@ pub trait RcDomExt: Sized + Minify
 	
 	/// Appends a new element node to a parent node
 	#[inline(always)]
-	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>);
+	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
 	
 	/// Appends a new element before a sibling node
 	#[inline(always)]
-	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>);
+	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
 	
 	/// Appends a new comment node to a parent node
 	#[inline(always)]
@@ -235,7 +235,7 @@ impl RcDomExt for RcDom
 	}
 	
 	#[inline(always)]
-	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>)
+	fn append_new_element_to_document_node(&mut self, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
 	{
 		let document = self.document.clone();
 		self.append_new_element_to_parent_node(&document, qualified_name, attributes)
@@ -307,17 +307,19 @@ impl RcDomExt for RcDom
 	}
 	
 	#[inline(always)]
-	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>)
+	fn append_new_element_to_parent_node(&mut self, parent_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
 	{
 		let node = self._create_parent_less_element(qualified_name, attributes);
-		self.append(parent_node, AppendNode(node))
+		self.append(parent_node, AppendNode(node.clone()));
+		node
 	}
 	
 	#[inline(always)]
-	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>)
+	fn append_new_element_before_sibling_node(&mut self, sibling_node: &Rc<Node>, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
 	{
-		let node = AppendNode(self._create_parent_less_element(qualified_name, attributes));
-		self.append_before_sibling(sibling_node, node)
+		let node = self._create_parent_less_element(qualified_name, attributes);
+		self.append_before_sibling(sibling_node, AppendNode(node.clone()));
+		node
 	}
 	
 	#[inline(always)]

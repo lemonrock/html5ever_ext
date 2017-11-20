@@ -59,11 +59,11 @@ pub trait NodeExt: Sized + Minify
 	
 	/// Appends a new element node to a parent node
 	#[inline(always)]
-	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>);
+	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
 	
 	/// Appends a new element before a sibling node
 	#[inline(always)]
-	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>);
+	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>;
 	
 	/// Appends a new comment node to a parent node
 	#[inline(always)]
@@ -297,13 +297,13 @@ impl NodeExt for Rc<Node>
 	}
 	
 	#[inline(always)]
-	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>)
+	fn append_new_element_to(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
 	{
 		rc_dom.append_new_element_to_parent_node(self, qualified_name, attributes)
 	}
 	
 	#[inline(always)]
-	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>)
+	fn append_new_element_before_sibling_of(&self, rc_dom: &mut RcDom, qualified_name: QualName, attributes: Vec<Attribute>) -> Rc<Node>
 	{
 		rc_dom.append_new_element_before_sibling_node(self, qualified_name, attributes)
 	}
