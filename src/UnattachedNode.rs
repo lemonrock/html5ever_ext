@@ -72,6 +72,10 @@ impl UnattachedNode
 	#[inline(always)]
 	pub fn with_id_attribute(self, id: &str) -> Self
 	{
+		if id.is_empty()
+		{
+			return self;
+		}
 		self.with_attribute(local_name!("id").attribute(id))
 	}
 	
@@ -79,7 +83,127 @@ impl UnattachedNode
 	#[inline(always)]
 	pub fn with_title_attribute(self, title: &str) -> Self
 	{
+		if title.is_empty()
+		{
+			return self;
+		}
 		self.with_attribute(local_name!("title").attribute(title))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add an accesskey attribute.
+	#[inline(always)]
+	pub fn with_accesskey_attribute(self, accesskey: &str) -> Self
+	{
+		if accesskey.is_empty()
+		{
+			return self;
+		}
+		self.with_attribute(local_name!("accesskey").attribute(accesskey))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a lang attribute.
+	#[inline(always)]
+	pub fn with_lang_attribute(self, lang: &str) -> Self
+	{
+		self.with_attribute(local_name!("lang").attribute(lang))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a contenteditable attribute.
+	#[inline(always)]
+	pub fn with_contenteditable_attribute(self, editable: bool) -> Self
+	{
+		let value = if editable
+		{
+			""
+		}
+		else
+		{
+			"false"
+		};
+		
+		self.with_attribute(local_name!("contenteditable").attribute(value))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a spellcheck attribute.
+	#[inline(always)]
+	pub fn with_spellcheck_attribute(self, spellcheck: bool) -> Self
+	{
+		let value = if spellcheck
+		{
+			"true"
+		}
+		else
+		{
+			"false"
+		};
+		
+		self.with_attribute(LocalName::from("spellcheck").attribute(value))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a tabindex attribute.
+	#[inline(always)]
+	pub fn with_tabindex_attribute(self, tabindex: i32) -> Self
+	{
+		self.with_attribute(local_name!("tabindex").attribute(&format!("{}", tabindex)))
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a hidden attribute.
+	#[inline(always)]
+	pub fn with_hidden_attribute(self, hidden: bool) -> Self
+	{
+		if hidden
+		{
+			self.with_attribute(local_name!("hidden").empty_attribute())
+		}
+		else
+		{
+			self
+		}
+	}
+	
+	//noinspection SpellCheckingInspection
+	/// Add a contextmenu attribute.
+	#[inline(always)]
+	pub fn with_contextmenu_attribute(self, id: &str) -> Self
+	{
+		if id.is_empty()
+		{
+			return self;
+		}
+		self.with_attribute(local_name!("contextmenu").attribute(id))
+	}
+	
+	/// Add a data attribute.
+	#[inline(always)]
+	pub fn with_data_attribute(self, name: &str, value: &str) -> Self
+	{
+		const PREFIX: &'static str = "data-";
+		let mut attribute_name = String::with_capacity(PREFIX.len() + name.len());
+		attribute_name.push_str(PREFIX);
+		attribute_name.push_str(name);
+		let local_name = LocalName::from(attribute_name.as_str());
+		
+		self.with_attribute(local_name.attribute(value))
+	}
+	
+	/// Add a draggable attribute.
+	#[inline(always)]
+	pub fn with_draggable_attribute(self, draggable: Draggable) -> Self
+	{
+		self.with_attribute(local_name!("draggable").attribute(draggable.to_str()))
+	}
+	
+	/// Add a dir attribute.
+	#[inline(always)]
+	pub fn with_dir_attribute(self, dir: Dir) -> Self
+	{
+		self.with_attribute(local_name!("dir").attribute(dir.to_str()))
 	}
 	
 	/// Add a class attribute.
@@ -87,6 +211,13 @@ impl UnattachedNode
 	pub fn with_class_attribute(self, classes: &str) -> Self
 	{
 		self.with_attribute(local_name!("class").attribute(classes))
+	}
+	
+	/// Add a class attribute.
+	#[inline(always)]
+	pub fn with_role_attribute(self, role: AriaRole) -> Self
+	{
+		self.with_attribute(local_name!("role").attribute(role.to_str()))
 	}
 	
 	/// Add a class attribute from classes
@@ -97,15 +228,19 @@ impl UnattachedNode
 		let mut after_first = false;
 		for class in classes.iter()
 		{
-			if after_first
+			let value = class.deref();
+			if !value.is_empty()
 			{
-				class_string.push(' ');
+				if after_first
+				{
+					class_string.push(' ');
+				}
+				else
+				{
+					after_first = true;
+				}
+				class_string.push_str(value);
 			}
-			else
-			{
-				after_first = true;
-			}
-			class_string.push_str(class.deref());
 		}
 		self.with_class_attribute(&class_string)
 	}
@@ -116,15 +251,23 @@ impl UnattachedNode
 	{
 		for class in classes.iter()
 		{
-			self = self.with_class(class.deref())
+			let value = class.deref();
+			if !value.is_empty()
+			{
+				self = self.with_class(value)
+			}
 		}
 		self
 	}
 	
 	/// Add a class attribute if it does not exist, or appends to an existing class attribute if it does
 	#[inline(always)]
-	pub fn with_class(mut self, class: &str) -> Self
+	pub fn with_class(mut self, value: &str) -> Self
 	{
+		if value.is_empty()
+		{
+			return self;
+		}
 		let class_local_name = local_name!("class");
 		let mut found = false;
 		for attribute in self.attributes.iter_mut()
@@ -135,7 +278,7 @@ impl UnattachedNode
 				{
 					attribute.value.push_char(' ');
 				}
-				attribute.value.push_slice(class);
+				attribute.value.push_slice(value);
 				found = true;
 				break;
 			}
@@ -146,7 +289,7 @@ impl UnattachedNode
 		}
 		else
 		{
-			self.with_class_attribute(class)
+			self.with_class_attribute(value)
 		}
 	}
 	

@@ -129,7 +129,10 @@ use ::std::rc::Rc;
 #[cfg(test)] mod tests;
 
 
+include!("AriaRole.rs");
 include!("AttributeExt.rs");
+include!("Dir.rs");
+include!("Draggable.rs");
 include!("Selectable.rs");
 include!("ElementNode.rs");
 include!("HtmlError.rs");
