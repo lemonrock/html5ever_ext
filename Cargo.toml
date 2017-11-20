@@ -16,7 +16,7 @@ exclude = ["*"]
 include = ["README.md", "LICENSE", "COPYRIGHT", "src/**/*.rs", "Cargo.toml", "rustfmt.toml", "clippy.toml"]
 readme = "README.md"
 publish = true
-version = "0.21.10"
+version = "0.21.11"
 
 [profile.release]
 opt-level = 3
@@ -28,5 +28,6 @@ codegen-units = 1
 
 [dependencies]
 css = "0.0.22"
+either = "1.2.0"
 html5ever = "0.21.0"
 quick-error = "1.2.1"

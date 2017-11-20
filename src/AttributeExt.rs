@@ -8,6 +8,13 @@ pub trait AttributeExt: Sized
 	/// Makes an Attribute with a Local QualName and value
 	#[inline(always)]
 	fn local(local_name: LocalName, value: &str) -> Self;
+	
+	/// Makes an empty Attribute with a Local QualName
+	#[inline(always)]
+	fn empty(local_name: LocalName) -> Self
+	{
+		Self::local(local_name, "")
+	}
 }
 
 impl AttributeExt for Attribute

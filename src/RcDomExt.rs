@@ -28,6 +28,10 @@ pub trait RcDomExt: Sized + Minify
 	/// Remove all comments and processing instructions and make the DOCTYPE a simple 'html' (for HTML 5).
 	fn recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(&self, context: &Path) -> Result<(), HtmlError>;
 	
+	/// Attaches this node as a child of the document, ie as a root element node
+	#[inline(always)]
+	fn attach_to_document_node(&mut self, unattached_node: UnattachedNode) -> Rc<Node>;
+	
 	/// Moves a node's children to the document node
 	#[inline(always)]
 	fn move_node_children_to_document_node(&mut self, node: &Rc<Node>);
@@ -218,6 +222,12 @@ impl RcDomExt for RcDom
 		};
 		document.children.borrow_mut().insert(0, Rc::new(doctype_node));
 		Ok(())
+	}
+	
+	#[inline(always)]
+	fn attach_to_document_node(&mut self, unattached_node: UnattachedNode) -> Rc<Node>
+	{
+		unattached_node.attach_to_document_node(self)
 	}
 	
 	#[inline(always)]

@@ -65,6 +65,7 @@
 
 
 pub extern crate css;
+pub extern crate either;
 #[macro_use] pub extern crate html5ever;
 #[macro_use] extern crate quick_error;
 
@@ -85,6 +86,8 @@ use ::css::selectors::matching::ElementSelectorFlags;
 use ::css::selectors::matching::LocalMatchingContext;
 use ::css::selectors::matching::MatchingContext;
 use ::css::selectors::matching::RelevantLinkStatus;
+use ::either::Either;
+use ::either::Either::*;
 pub use ::html5ever::Attribute;
 pub use ::html5ever::LocalName;
 pub use ::html5ever::Parser;
@@ -139,3 +142,4 @@ include!("QualNameExt.rs");
 include!("QualNameOnlyExt.rs");
 include!("RcDomExt.rs");
 include!("UltraMinifyingHtmlSerializer.rs");
+include!("UnattachedNode.rs");

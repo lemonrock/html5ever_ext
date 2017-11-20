@@ -41,6 +41,14 @@ pub trait NodeExt: Sized + Minify
 	#[inline(always)]
 	fn is_inter_element_whitespace_comment_or_processing_instruction(&self) -> bool;
 	
+	/// Used to attach an unattached child node to a parent
+	#[inline(always)]
+	fn attach_child(&self, rc_dom: &mut RcDom, child: UnattachedNode) -> Rc<Node>;
+	
+	/// Used to attach an unattached sibling node to a sibling
+	#[inline(always)]
+	fn attach_sibling_before(&self, rc_dom: &mut RcDom, sibling_node: UnattachedNode) -> Rc<Node>;
+	
 	/// Removes this node from its parent.
 	#[inline(always)]
 	fn remove(&self, rc_dom: &mut RcDom);
@@ -270,6 +278,18 @@ impl NodeExt for Rc<Node>
 			
 			_ => false,
 		}
+	}
+	
+	#[inline(always)]
+	fn attach_child(&self, rc_dom: &mut RcDom, child: UnattachedNode) -> Rc<Node>
+	{
+		child.attach_to_parent_node(rc_dom, self)
+	}
+	
+	#[inline(always)]
+	fn attach_sibling_before(&self, rc_dom: &mut RcDom, sibling_node: UnattachedNode) -> Rc<Node>
+	{
+		sibling_node.attach_to_before_sibling_node(rc_dom, self)
 	}
 	
 	#[inline(always)]

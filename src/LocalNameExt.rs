@@ -3,7 +3,7 @@
 
 
 /// Additional helpers to make LocalName more pleasant to work with
-pub trait LocalNameExt
+pub trait LocalNameExt: Sized
 {
 	/// Turns a LocalName into a Local QualName
 	#[inline(always)]
@@ -12,6 +12,13 @@ pub trait LocalNameExt
 	/// Turns a LocalName into an Attribute with a Local QualName and value
 	#[inline(always)]
 	fn attribute(self, value: &str) -> Attribute;
+	
+	/// Turns a LocalName into an Attribute with a Local QualName and no value
+	#[inline(always)]
+	fn empty_attribute(self) -> Attribute
+	{
+		self.attribute("")
+	}
 }
 
 impl LocalNameExt for LocalName
