@@ -215,6 +215,13 @@ impl UnattachedNode
 		self.with_attribute(local_name!("dir").attribute(dir.to_str()))
 	}
 	
+	/// Add a href attribute.
+	#[inline(always)]
+	pub fn with_href_attribute(self, href: &str) -> Self
+	{
+		self.with_attribute(local_name!("href").attribute(href))
+	}
+	
 	/// Add a class attribute.
 	#[inline(always)]
 	pub fn with_class_attribute(self, classes: &str) -> Self
