@@ -17,6 +17,15 @@ pub struct UnattachedNode
 	pub children: Vec<Either<String, UnattachedNode>>,
 }
 
+impl<'a> From<&'a str> for UnattachedNode
+{
+	#[inline(always)]
+	fn from(local_name: &'a str) -> Self
+	{
+		LocalName::from(local_name).empty_node()
+	}
+}
+
 impl UnattachedNode
 {
 	/// Represents an empty element, such as <br>

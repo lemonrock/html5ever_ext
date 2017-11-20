@@ -35,6 +35,13 @@ pub trait LocalNameExt: Sized
 	/// Turns a LocalName into an UnattachedNode with text
 	#[inline(always)]
 	fn with_text<S: Into<String>>(self, text: S) -> UnattachedNode;
+	
+	/// Turns a LocalName into an UnattachedNode with a class attribute
+	#[inline(always)]
+	fn with_classes<S: Deref<Target=str>>(self, classes: &[S]) -> UnattachedNode
+	{
+		self.empty_node().with_classes(classes)
+	}
 }
 
 impl LocalNameExt for LocalName
