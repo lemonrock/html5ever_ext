@@ -146,3 +146,4 @@ include!("QualNameOnlyExt.rs");
 include!("RcDomExt.rs");
 include!("UltraMinifyingHtmlSerializer.rs");
 include!("UnattachedNode.rs");
+include!("UnattachedNodeExt.rs");

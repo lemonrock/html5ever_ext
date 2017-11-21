@@ -35,6 +35,16 @@ impl From<LocalName> for UnattachedNode
 	}
 }
 
+impl UnattachedNodeExt for UnattachedNode
+{
+	fn to_rc_dom(self) -> RcDom
+	{
+		let mut rc_dom = RcDom::default();
+		self.attach_to_document_node(&mut rc_dom);
+		rc_dom
+	}
+}
+
 impl UnattachedNode
 {
 	/// Represents an empty element, such as <br>
