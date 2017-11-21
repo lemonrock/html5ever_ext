@@ -26,6 +26,15 @@ impl<'a> From<&'a str> for UnattachedNode
 	}
 }
 
+impl From<LocalName> for UnattachedNode
+{
+	#[inline(always)]
+	fn from(local_name: LocalName) -> Self
+	{
+		local_name.empty_node()
+	}
+}
+
 impl UnattachedNode
 {
 	/// Represents an empty element, such as <br>
