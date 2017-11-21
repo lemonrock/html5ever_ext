@@ -327,8 +327,9 @@ impl UnattachedNode
 	
 	/// Add a child text. If there is an existing child text element, appends its text to it.
 	#[inline(always)]
-	pub fn with_child_text(mut self, child_text: String) -> Self
+	pub fn with_child_text<S: Into<String>>(mut self, child_text: S) -> Self
 	{
+		let child_text = child_text.into();
 		if self.children.is_empty()
 		{
 			self.children.push(Left(child_text));
