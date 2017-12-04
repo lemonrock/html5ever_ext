@@ -114,6 +114,13 @@ impl UnattachedNode
 		}
 	}
 	
+	/// Add an empty attribute.
+	#[inline(always)]
+	pub fn with_empty_attribute(self, name: &str) -> Self
+	{
+		self.with_attribute(LocalName::from(name).empty_attribute())
+	}
+	
 	/// Add an id attribute.
 	#[inline(always)]
 	pub fn with_id_attribute(self, id: &str) -> Self
