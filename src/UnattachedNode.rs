@@ -47,6 +47,24 @@ impl UnattachedNodeExt for UnattachedNode
 
 impl UnattachedNode
 {
+	/// Creates a HTML RcDom from this node as the 'html' root with a HTML5 DOCTYPE preceding it.
+	/// Panics if the node is not called 'html'.
+	#[inline(always)]
+	pub fn to_html5_rc_dom(self) -> RcDom
+	{
+		let mut rc_dom = RcDom::default();
+		rc_dom.create_html5_document(self);
+		rc_dom
+	}
+	
+	/// Creates a HTML document as a String from this node as the 'html' root with a HTML5 DOCTYPE preceding it.
+	/// Panics if the node is not called 'html'.
+	#[inline(always)]
+	pub fn to_html5_document(self, html_head_and_body_tags_are_optional: bool) -> String
+	{
+		self.to_html5_rc_dom().minify_to_string(html_head_and_body_tags_are_optional)
+	}
+	
 	/// Represents an empty element, such as <br>
 	#[inline(always)]
 	pub fn empty(local_name: LocalName) -> Self

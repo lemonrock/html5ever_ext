@@ -28,6 +28,11 @@ pub trait RcDomExt: Sized + Minify
 	/// Remove all comments and processing instructions and make the DOCTYPE a simple 'html' (for HTML 5).
 	fn recursively_strip_nodes_of_comments_and_processing_instructions_and_create_sane_doc_type(&self, context: &Path) -> Result<(), HtmlError>;
 	
+	/// Adds this node preceded by a HTML5 DOCTYPE.
+	/// Panics if the unattached_node is not called 'html'.
+	#[inline(always)]
+	fn create_html5_document(&mut self, unattached_node: UnattachedNode) -> Rc<Node>;
+	
 	/// Attaches this node as a child of the document, ie as a root element node
 	#[inline(always)]
 	fn attach_to_document_node(&mut self, unattached_node: UnattachedNode) -> Rc<Node>;
@@ -222,6 +227,29 @@ impl RcDomExt for RcDom
 		};
 		document.children.borrow_mut().insert(0, Rc::new(doctype_node));
 		Ok(())
+	}
+	
+	#[inline(always)]
+	fn create_html5_document(&mut self, unattached_node: UnattachedNode) -> Rc<Node>
+	{
+		assert_eq!(unattached_node.local_name, local_name!("html"), "Unattached Node {:?} does not have a local name of 'html'", unattached_node);
+		
+		{
+			let document = &self.document;
+			let doctype_node = Node
+			{
+				parent: Cell::new(Some(Rc::downgrade(document))),
+				children: RefCell::new(Vec::new()),
+				data: Doctype
+				{
+					name: "html".into(),
+					public_id: "".into(),
+					system_id: "".into(),
+				},
+			};
+			document.children.borrow_mut().insert(0, Rc::new(doctype_node));
+		}
+		self.attach_to_document_node(unattached_node)
 	}
 	
 	#[inline(always)]
